@@ -311,6 +311,53 @@
   .pick.sel .chk{display:grid}
   .block .look-tag{font-size:10.5px;opacity:.9;margin-top:2px;display:flex;align-items:center;gap:3px}
 
+  .mini-btn{font-size:12px;font-weight:600;color:var(--now);background:var(--now-soft);
+    border-radius:999px;padding:5px 12px;display:flex;align-items:center;gap:5px}
+  .mini-btn:active{transform:scale(.96)}
+
+  /* ---- probador ---- */
+  .fitter{position:absolute;inset:0;z-index:45;background:var(--bg);display:none;flex-direction:column}
+  .fitter.on{display:flex}
+  .fitter-top{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 8px;flex:none}
+  .fitter-top h3{font-family:'Fraunces',Georgia,serif;font-size:20px;font-weight:600}
+  .fitter-top .x{width:38px;height:38px;border-radius:50%;border:1px solid var(--hairline);
+    background:var(--surface);display:grid;place-items:center;color:var(--muted)}
+  .fitter-top .x:hover{color:var(--ink)}
+  .fitter-top .x svg{width:19px;height:19px}
+  .stage-wrap{flex:1;position:relative;overflow:hidden;margin:2px 14px 0;border-radius:20px;
+    border:1px solid var(--hairline);background:var(--surface-2)}
+  .stage{position:absolute;inset:0;touch-action:none}
+  .stage .bodyphoto{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none}
+  .stage-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:12px;color:var(--faint);text-align:center;padding:0 34px}
+  .stage-empty svg{width:58px;height:58px;opacity:.55}
+  .stage-empty p{font-size:13.5px;line-height:1.5;max-width:26ch}
+  .fit-item{position:absolute;touch-action:none;cursor:grab}
+  .fit-item img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none;
+    filter:drop-shadow(0 6px 12px rgba(40,25,55,.30))}
+  .fit-item.sel{outline:2px dashed var(--now);outline-offset:3px;border-radius:6px}
+  .fit-item .handle,.fit-item .rm{position:absolute;width:26px;height:26px;border-radius:50%;
+    border:2px solid #fff;display:none;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.3);touch-action:none}
+  .fit-item .handle{right:-13px;bottom:-13px;background:var(--now);cursor:nwse-resize}
+  .fit-item .handle svg{width:13px;height:13px;color:#fff}
+  .fit-item .rm{left:-13px;top:-13px;background:var(--ink);color:var(--bg);font-size:14px;cursor:pointer}
+  .fit-item.sel .handle,.fit-item.sel .rm{display:grid}
+  .fit-toolbar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:10px 14px 4px;flex:none}
+  .fit-toolbar button{background:var(--surface);border:1px solid var(--hairline);border-radius:999px;
+    padding:9px 14px;font-size:12.5px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:6px}
+  .fit-toolbar button:disabled{opacity:.4}
+  .fit-toolbar button:active:not(:disabled){transform:scale(.96)}
+  .fit-toolbar button svg{width:16px;height:16px}
+  .fit-toolbar button.accent{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .fit-tray{flex:none;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;
+    padding:8px 14px calc(14px + env(safe-area-inset-bottom))}
+  .fit-tray::-webkit-scrollbar{display:none}
+  .tray-item{flex:none;width:58px;height:58px;border-radius:13px;background:var(--surface);
+    border:1px solid var(--hairline);display:grid;place-items:center;overflow:hidden;cursor:pointer}
+  .tray-item img{width:100%;height:100%;object-fit:contain}
+  .tray-item:active{transform:scale(.94)}
+  .tray-empty{font-size:12.5px;color:var(--faint);padding:20px 6px;white-space:nowrap}
+
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -359,10 +406,40 @@
 
   <!-- vista clóset -->
   <div class="closet" id="closet">
-    <div class="sec-head"><h2>Tus looks</h2></div>
+    <div class="sec-head"><h2>Tus looks</h2>
+      <button class="mini-btn" id="fitOpen">🪞 Probador</button>
+    </div>
     <div class="looks-row" id="looksRow"></div>
     <div id="garmentSections"></div>
   </div>
+
+  <!-- probador (superponer prendas sobre tu foto) -->
+  <div class="fitter" id="fitter" aria-label="Probador">
+    <div class="fitter-top">
+      <button class="x" id="fitClose" aria-label="Cerrar probador">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <h3>Probador</h3>
+      <button class="x" id="fitPhotoBtn" aria-label="Cambiar mi foto">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg>
+      </button>
+    </div>
+    <div class="stage-wrap"><div class="stage" id="stage">
+      <div class="stage-empty" id="stageEmpty">
+        <svg viewBox="0 0 64 150" fill="none"><circle cx="32" cy="16" r="11" stroke="currentColor" stroke-width="3"/><path d="M18 42c0-6 6-10 14-10s14 4 14 10v40c0 4-4 6-6 6H24c-2 0-6-2-6-6z" stroke="currentColor" stroke-width="3"/><path d="M24 88v52M40 88v52" stroke="currentColor" stroke-width="3"/></svg>
+        <p>Añade una foto tuya de cuerpo entero y arrastra prendas encima para probártelas.</p>
+      </div>
+    </div></div>
+    <div class="fit-toolbar" id="fitToolbar">
+      <button id="fitPhoto2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3"/></svg>Mi foto</button>
+      <button id="fitFwd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 19V5M6 11l6-6 6 6"/></svg>Adelante</button>
+      <button id="fitBack" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Atrás</button>
+      <button id="fitSave" class="accent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12M8 11l4 4 4-4M5 21h14"/></svg>Guardar</button>
+      <button id="fitClear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 7h12M9 7V5h6v2M8 7l1 13h6l1-13"/></svg>Limpiar</button>
+    </div>
+    <div class="fit-tray" id="fitTray"></div>
+  </div>
+  <input type="file" id="bodyInput" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
 
   <!-- botón flotante: añadir prenda -->
   <button class="fab" id="fab">
@@ -497,6 +574,7 @@
   var gEditing=null, gImg=null, gSelCat="top";
   var lEditing=null, lPick=[];
   var selLook=null, view="hoy";
+  var fitItems=[], fitBody=null, fitSel=null;
 
   var $ = function(id){return document.getElementById(id);};
   var uid = function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);};
@@ -801,11 +879,12 @@
   function openDB(){
     return new Promise(function(res,rej){
       if(!("indexedDB" in window)){ rej(new Error("no idb")); return; }
-      var r=indexedDB.open("coro-db",1);
+      var r=indexedDB.open("coro-db",2);
       r.onupgradeneeded=function(){
         var db=r.result;
         if(!db.objectStoreNames.contains("garments")) db.createObjectStore("garments",{keyPath:"id"});
         if(!db.objectStoreNames.contains("looks")) db.createObjectStore("looks",{keyPath:"id"});
+        if(!db.objectStoreNames.contains("meta")) db.createObjectStore("meta",{keyPath:"k"});
       };
       r.onsuccess=function(){res(r.result);};
       r.onerror=function(){rej(r.error);};
@@ -814,6 +893,7 @@
   function idbAll(store){return new Promise(function(res){try{var q=DB.transaction(store).objectStore(store).getAll();q.onsuccess=function(){res(q.result||[]);};q.onerror=function(){res([]);};}catch(e){res([]);}});}
   function idbPut(store,val){return new Promise(function(res){try{var q=DB.transaction(store,"readwrite").objectStore(store).put(val);q.onsuccess=function(){res(true);};q.onerror=function(){res(false);};}catch(e){res(false);}});}
   function idbDel(store,id){return new Promise(function(res){try{var q=DB.transaction(store,"readwrite").objectStore(store).delete(id);q.onsuccess=function(){res(true);};q.onerror=function(){res(false);};}catch(e){res(false);}});}
+  function idbGet(store,key){return new Promise(function(res){try{var q=DB.transaction(store).objectStore(store).get(key);q.onsuccess=function(){res(q.result||null);};q.onerror=function(){res(null);};}catch(e){res(null);}});}
 
   function gById(id){for(var i=0;i<closetGarments.length;i++)if(closetGarments[i].id===id)return closetGarments[i];return null;}
   function svgUse(id){return '<svg viewBox="0 0 48 48"><use href="#'+id+'"/></svg>';}
@@ -996,6 +1076,175 @@
     renderCloset(); renderTimeline();
   }
 
+  // ---- probador (superponer prendas sobre tu foto) ----
+  function stageRect(){return $("stage").getBoundingClientRect();}
+  function saveFit(){ if(DB) idbPut("meta",{k:"fitComp",v:fitItems}); }
+  function saveBody(){ if(DB) idbPut("meta",{k:"fitBody",v:fitBody}); }
+
+  async function openFitter(){
+    if(DB){
+      var b=await idbGet("meta","fitBody"); fitBody=b?b.v:null;
+      var comp=await idbGet("meta","fitComp"); fitItems=(comp&&comp.v)?comp.v:[];
+    }
+    // descarta ítems cuya prenda ya no existe
+    var n0=fitItems.length;
+    fitItems=fitItems.filter(function(it){return gById(it.garmentId);});
+    if(fitItems.length!==n0) saveFit();
+    fitSel=null;
+    $("fitter").classList.add("on");
+    renderStage(); renderTray(); updateFitToolbar();
+  }
+  function closeFitter(){ $("fitter").classList.remove("on"); fitSel=null; }
+
+  function positionItem(el,it,r){
+    r=r||stageRect();
+    var w=it.nw*r.width, h=w*(it.ar||1.2);
+    el.style.width=w+"px"; el.style.height=h+"px";
+    el.style.left=(it.nx*r.width - w/2)+"px";
+    el.style.top=(it.ny*r.height - h/2)+"px";
+  }
+  function renderStage(){
+    var st=$("stage");
+    var old=st.querySelectorAll(".fit-item,.bodyphoto");
+    for(var i=0;i<old.length;i++) old[i].remove();
+    if(fitBody){
+      var bi=document.createElement("img"); bi.className="bodyphoto"; bi.src=fitBody; bi.alt="";
+      st.insertBefore(bi, st.firstChild);
+      $("stageEmpty").style.display="none";
+    } else {
+      $("stageEmpty").style.display = fitItems.length?"none":"flex";
+    }
+    var r=stageRect();
+    fitItems.slice().sort(function(a,b){return a.z-b.z;}).forEach(function(it){
+      var g=gById(it.garmentId); if(!g) return;
+      var el=document.createElement("div"); el.className="fit-item"+(fitSel===it.id?" sel":"");
+      el.setAttribute("data-id",it.id); el.style.zIndex=String(10+it.z);
+      el.innerHTML='<img src="'+g.img+'" alt="">'+
+        '<button class="rm" aria-label="Quitar">✕</button>'+
+        '<div class="handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M9 20h11M20 9v11M20 20L9 9"/></svg></div>';
+      positionItem(el,it,r);
+      st.appendChild(el);
+      wireItem(el,it);
+    });
+  }
+  function renderSelState(){
+    var items=$("stage").querySelectorAll(".fit-item");
+    for(var i=0;i<items.length;i++) items[i].classList.toggle("sel", items[i].getAttribute("data-id")===fitSel);
+  }
+  function selectItem(id){ fitSel=id; renderSelState(); updateFitToolbar(); }
+  function updateFitToolbar(){ var has=!!fitSel; $("fitFwd").disabled=!has; $("fitBack").disabled=!has; }
+
+  function wireItem(el,it){
+    el.addEventListener("pointerdown",function(e){
+      if(e.target.closest(".handle")||e.target.closest(".rm")) return;
+      e.preventDefault(); selectItem(it.id);
+      var r=stageRect(), sx=e.clientX, sy=e.clientY, ox=it.nx, oy=it.ny;
+      try{el.setPointerCapture(e.pointerId);}catch(_){}
+      function move(ev){
+        it.nx=Math.min(1.1,Math.max(-0.1, ox+(ev.clientX-sx)/r.width));
+        it.ny=Math.min(1.1,Math.max(-0.1, oy+(ev.clientY-sy)/r.height));
+        positionItem(el,it,r);
+      }
+      function up(){ el.removeEventListener("pointermove",move); el.removeEventListener("pointerup",up); saveFit(); }
+      el.addEventListener("pointermove",move); el.addEventListener("pointerup",up);
+    });
+    var handle=el.querySelector(".handle");
+    handle.addEventListener("pointerdown",function(e){
+      e.preventDefault(); e.stopPropagation(); selectItem(it.id);
+      var r=stageRect(), cx=it.nx*r.width, cy=it.ny*r.height;
+      try{handle.setPointerCapture(e.pointerId);}catch(_){}
+      function move(ev){
+        var dx=(ev.clientX-r.left)-cx, dy=(ev.clientY-r.top)-cy;
+        var dist=Math.max(20, Math.hypot(dx,dy));
+        it.nw=Math.min(1.5, Math.max(0.08, (dist*2)/r.width));
+        positionItem(el,it,r);
+      }
+      function up(){ handle.removeEventListener("pointermove",move); handle.removeEventListener("pointerup",up); saveFit(); }
+      handle.addEventListener("pointermove",move); handle.addEventListener("pointerup",up);
+    });
+    el.querySelector(".rm").addEventListener("click",function(e){ e.stopPropagation(); removeItem(it.id); });
+  }
+  function removeItem(id){
+    fitItems=fitItems.filter(function(x){return x.id!==id;});
+    if(fitSel===id) fitSel=null;
+    renderStage(); updateFitToolbar(); saveFit();
+  }
+  function addToStage(g){
+    var im=new Image();
+    function place(ar){
+      var maxZ=fitItems.reduce(function(m,x){return Math.max(m,x.z);},0);
+      var nit={id:uid(),garmentId:g.id,nx:0.5,ny:0.5,nw:0.38,ar:ar,z:maxZ+1};
+      fitItems.push(nit); $("stageEmpty").style.display="none";
+      renderStage(); selectItem(nit.id); saveFit();
+    }
+    im.onload=function(){ place((im.naturalHeight||120)/(im.naturalWidth||100)); };
+    im.onerror=function(){ place(1.2); };
+    im.src=g.img;
+  }
+  function layer(dir){
+    if(!fitSel) return;
+    var it=null,i; for(i=0;i<fitItems.length;i++) if(fitItems[i].id===fitSel){it=fitItems[i];break;}
+    if(!it) return;
+    var sorted=fitItems.slice().sort(function(a,b){return a.z-b.z;});
+    var idx=sorted.indexOf(it), swap=dir>0?sorted[idx+1]:sorted[idx-1];
+    if(!swap) return;
+    var t=it.z; it.z=swap.z; swap.z=t;
+    renderStage(); selectItem(fitSel); saveFit();
+  }
+  function renderTray(){
+    var t=$("fitTray"); t.innerHTML="";
+    if(!closetGarments.length){ t.innerHTML='<div class="tray-empty">Añade prendas en el clóset para probártelas.</div>'; return; }
+    closetGarments.forEach(function(g){
+      var el=document.createElement("div"); el.className="tray-item";
+      el.innerHTML='<img src="'+g.img+'" alt="">';
+      el.onclick=function(){ addToStage(g); };
+      t.appendChild(el);
+    });
+  }
+  function pickBody(){ $("bodyInput").value=""; $("bodyInput").click(); }
+  $("bodyInput").addEventListener("change",async function(e){
+    var file=e.target.files&&e.target.files[0]; if(!file)return;
+    var url=await fileToDataURL(file,1400);
+    if(url){ fitBody=url; saveBody(); renderStage(); } else { toast("No se pudo leer la foto"); }
+  });
+  async function saveFitImage(){
+    var r=stageRect(), scale=2, W=Math.round(r.width*scale), H=Math.round(r.height*scale);
+    var c=document.createElement("canvas"); c.width=W; c.height=H; var ctx=c.getContext("2d");
+    ctx.fillStyle=getComputedStyle($("stage")).backgroundColor||"#ffffff"; ctx.fillRect(0,0,W,H);
+    function drawImg(src,box){return new Promise(function(res){var im=new Image();im.onload=function(){
+      var s=Math.min(box.w/im.naturalWidth, box.h/im.naturalHeight), w=im.naturalWidth*s, h=im.naturalHeight*s;
+      ctx.drawImage(im, box.x+(box.w-w)/2, box.y+(box.h-h)/2, w, h); res();
+    };im.onerror=function(){res();};im.src=src;});}
+    if(fitBody) await drawImg(fitBody,{x:0,y:0,w:W,h:H});
+    var sorted=fitItems.slice().sort(function(a,b){return a.z-b.z;});
+    for(var i=0;i<sorted.length;i++){
+      var it=sorted[i], g=gById(it.garmentId); if(!g) continue;
+      var w=it.nw*r.width*scale, h=w*(it.ar||1.2);
+      await drawImg(g.img,{x:it.nx*W-w/2, y:it.ny*H-h/2, w:w, h:h});
+    }
+    try{
+      var url=c.toDataURL("image/png");
+      var a=document.createElement("a"); a.href=url; a.download="coro-look.png";
+      document.body.appendChild(a); a.click(); a.remove();
+      toast("Imagen guardada");
+    }catch(e){ toast("No se pudo guardar la imagen"); }
+  }
+
+  $("fitOpen").addEventListener("click",openFitter);
+  $("fitClose").addEventListener("click",closeFitter);
+  $("fitPhotoBtn").addEventListener("click",pickBody);
+  $("fitPhoto2").addEventListener("click",pickBody);
+  $("fitFwd").addEventListener("click",function(){layer(1);});
+  $("fitBack").addEventListener("click",function(){layer(-1);});
+  $("fitSave").addEventListener("click",saveFitImage);
+  $("fitClear").addEventListener("click",function(){ fitItems=[]; fitSel=null; renderStage(); updateFitToolbar(); saveFit(); });
+  $("stage").addEventListener("pointerdown",function(e){
+    if(e.target===this || e.target.classList.contains("bodyphoto") || e.target.closest(".stage-empty")){
+      fitSel=null; renderSelState(); updateFitToolbar();
+    }
+  });
+  window.addEventListener("resize",function(){ if($("fitter").classList.contains("on")) renderStage(); });
+
   // ---- toast ----
   var toastT;
   function toast(msg){
@@ -1037,6 +1286,11 @@
       addLook:async function(name,ids){var lk={id:uid(),name:name,garmentIds:ids||[],created:Date.now()};closetLooks.unshift(lk);await idbPut("looks",lk);renderCloset();renderTimeline();return lk.id;},
       attachLook:function(blockIdx,lookId){state.blocks[blockIdx].lookId=lookId;save();renderTimeline();return state.blocks[blockIdx];},
       go:setView,
+      openFitter:openFitter, closeFitter:closeFitter,
+      addFit:function(gid){var g=gById(gid);if(g)addToStage(g);},
+      setBody:function(url){fitBody=url;saveBody();renderStage();},
+      fitState:function(){return {open:$("fitter").classList.contains("on"),items:fitItems.length,body:!!fitBody,domItems:document.querySelectorAll('.fit-item').length,tray:document.querySelectorAll('.tray-item').length,sel:fitSel};},
+      layer:layer,
       snapshot:function(){return {view:view,garments:closetGarments.length,looks:closetLooks.length,blocks:state.blocks.length};},
       clear:async function(){var i;for(i=0;i<closetGarments.length;i++)await idbDel("garments",closetGarments[i].id);for(i=0;i<closetLooks.length;i++)await idbDel("looks",closetLooks[i].id);closetGarments=[];closetLooks=[];renderCloset();}
     };
