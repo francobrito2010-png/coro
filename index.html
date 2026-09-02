@@ -451,7 +451,8 @@
       </div>
     </div></div>
     <div class="fit-toolbar" id="fitToolbar">
-      <button id="fitAvatar" class="accent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg>Mi avatar</button>
+      <button id="fitReal" class="accent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>Prueba realista</button>
+      <button id="fitAvatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg>Mi avatar</button>
       <button id="fitPhoto2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3"/></svg>Mi foto</button>
       <button id="fitFwd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 19V5M6 11l6-6 6 6"/></svg>Adelante</button>
       <button id="fitBack" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Atrás</button>
@@ -1266,6 +1267,7 @@
 
   $("fitOpen").addEventListener("click",openFitter);
   $("fitClose").addEventListener("click",closeFitter);
+  $("fitReal").addEventListener("click",function(){ toast("Prueba realista con IA — se activa al añadir créditos ✷"); });
   $("fitPhotoBtn").addEventListener("click",pickBody);
   $("fitPhoto2").addEventListener("click",pickBody);
   $("fitFwd").addEventListener("click",function(){layer(1);});
