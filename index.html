@@ -16,6 +16,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
 <style>
   :root{
     --bg:#FCFAF8; --surface:#FFFFFF; --surface-2:#FBF8FB;
@@ -358,6 +364,20 @@
   .tray-item:active{transform:scale(.94)}
   .tray-empty{font-size:12.5px;color:var(--faint);padding:20px 6px;white-space:nowrap}
 
+  /* ---- creador de avatar ---- */
+  .avatar-ov{position:absolute;inset:0;z-index:70;background:var(--bg);display:none;flex-direction:column}
+  .avatar-ov.on{display:flex}
+  .avatar-ov .bar{display:flex;align-items:center;gap:10px;padding:14px 16px 8px;flex:none}
+  .avatar-ov .bar h3{font-family:'Fraunces',Georgia,serif;font-size:18px;font-weight:600;flex:1}
+  .avatar-ov .bar .x{width:36px;height:36px;border-radius:50%;border:1px solid var(--hairline);
+    background:var(--surface);display:grid;place-items:center;color:var(--muted)}
+  .avatar-ov .bar .x svg{width:18px;height:18px}
+  .avatar-ov iframe{flex:1;width:100%;border:0;background:var(--surface-2)}
+  .avatar-busy{position:absolute;inset:0;z-index:72;display:none;flex-direction:column;align-items:center;
+    justify-content:center;gap:14px;background:color-mix(in srgb,var(--bg) 90%,transparent);
+    color:var(--muted);font-size:13px;text-align:center;padding:0 30px}
+  .avatar-busy.on{display:flex}
+
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -431,6 +451,7 @@
       </div>
     </div></div>
     <div class="fit-toolbar" id="fitToolbar">
+      <button id="fitAvatar" class="accent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg>Mi avatar</button>
       <button id="fitPhoto2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3"/></svg>Mi foto</button>
       <button id="fitFwd" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 19V5M6 11l6-6 6 6"/></svg>Adelante</button>
       <button id="fitBack" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Atrás</button>
@@ -440,6 +461,18 @@
     <div class="fit-tray" id="fitTray"></div>
   </div>
   <input type="file" id="bodyInput" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
+
+  <!-- creador de avatar (Ready Player Me) -->
+  <div class="avatar-ov" id="avatarOv" aria-label="Crear avatar">
+    <div class="bar">
+      <button class="x" id="avatarClose" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <h3>Tu avatar</h3>
+    </div>
+    <iframe id="rpmFrame" title="Crear avatar" allow="camera *; microphone *; clipboard-write"></iframe>
+  </div>
+  <div class="avatar-busy" id="avatarBusy"><div class="loader"></div><div>Preparando tu avatar…<br>un momento</div></div>
 
   <!-- botón flotante: añadir prenda -->
   <button class="fab" id="fab">
@@ -1084,6 +1117,7 @@
   async function openFitter(){
     if(DB){
       var b=await idbGet("meta","fitBody"); fitBody=b?b.v:null;
+      if(!fitBody){ var av=await idbGet("meta","avatarImg"); if(av&&av.v) fitBody=av.v; }
       var comp=await idbGet("meta","fitComp"); fitItems=(comp&&comp.v)?comp.v:[];
     }
     // descarta ítems cuya prenda ya no existe
@@ -1245,6 +1279,70 @@
   });
   window.addEventListener("resize",function(){ if($("fitter").classList.contains("on")) renderStage(); });
 
+  // ---- avatar 3D (Ready Player Me) ----
+  var RPM_SUBDOMAIN="demo"; // sin cuenta; para producción, un subdominio propio (gratis)
+  function openAvatarCreator(){
+    var f=$("rpmFrame");
+    if(f.getAttribute("data-loaded")!=="1"){
+      f.src="https://"+RPM_SUBDOMAIN+".readyplayer.me/avatar?frameApi&bodyType=fullbody&clearCache";
+      f.setAttribute("data-loaded","1");
+    }
+    $("avatarOv").classList.add("on");
+  }
+  function closeAvatarCreator(){ $("avatarOv").classList.remove("on"); }
+  $("fitAvatar").addEventListener("click",openAvatarCreator);
+  $("avatarClose").addEventListener("click",closeAvatarCreator);
+
+  async function renderAvatar(glbUrl){
+    var THREE=await import("three");
+    var mod=await import("three/addons/loaders/GLTFLoader.js");
+    var GLTFLoader=mod.GLTFLoader;
+    var W=560,H=980;
+    var renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
+    renderer.setSize(W,H); renderer.setPixelRatio(1);
+    try{ renderer.outputColorSpace=THREE.SRGBColorSpace; }catch(e){}
+    var scene=new THREE.Scene();
+    var cam=new THREE.PerspectiveCamera(30, W/H, 0.1, 100);
+    scene.add(new THREE.HemisphereLight(0xffffff,0x9a8fb0,2.4));
+    var d1=new THREE.DirectionalLight(0xffffff,1.7); d1.position.set(1.5,3,3); scene.add(d1);
+    var d2=new THREE.DirectionalLight(0xffffff,0.6); d2.position.set(-2,1.5,-2); scene.add(d2);
+    var gltf=await new Promise(function(res,rej){ new GLTFLoader().load(glbUrl,res,undefined,rej); });
+    var model=gltf.scene; scene.add(model);
+    var box=new THREE.Box3().setFromObject(model);
+    var size=new THREE.Vector3(); box.getSize(size);
+    var center=new THREE.Vector3(); box.getCenter(center);
+    model.position.x -= center.x; model.position.z -= center.z;
+    var midY=center.y;
+    var dist=(size.y*1.12)/(2*Math.tan(Math.PI*cam.fov/360));
+    cam.position.set(0, midY, dist); cam.lookAt(0, midY, 0);
+    renderer.render(scene,cam);
+    var url=renderer.domElement.toDataURL("image/png");
+    try{ renderer.forceContextLoss(); renderer.dispose(); }catch(e){}
+    return url;
+  }
+
+  window.addEventListener("message",function(ev){
+    var data=ev.data;
+    if(typeof data==="string"){ try{ data=JSON.parse(data); }catch(e){ return; } }
+    if(!data || data.source!=="readyplayerme") return;
+    if(data.eventName==="v1.frame.ready"){
+      try{ $("rpmFrame").contentWindow.postMessage(JSON.stringify({target:"readyplayerme",type:"subscribe",eventName:"v1.**"}),"*"); }catch(e){}
+    }
+    if(data.eventName==="v1.avatar.exported"){
+      var url=data.data && data.data.url; if(!url) return;
+      closeAvatarCreator();
+      $("avatarBusy").classList.add("on");
+      renderAvatar(url).then(function(img){
+        if(img){
+          if(DB){ idbPut("meta",{k:"avatarGlb",v:url}); idbPut("meta",{k:"avatarImg",v:img}); }
+          fitBody=img; saveBody(); renderStage(); toast("¡Avatar listo!");
+        } else { toast("No se pudo crear el avatar"); }
+      }).catch(function(){
+        toast("El avatar funciona en la app instalada, no en el preview");
+      }).then(function(){ $("avatarBusy").classList.remove("on"); });
+    }
+  });
+
   // ---- toast ----
   var toastT;
   function toast(msg){
@@ -1291,6 +1389,8 @@
       setBody:function(url){fitBody=url;saveBody();renderStage();},
       fitState:function(){return {open:$("fitter").classList.contains("on"),items:fitItems.length,body:!!fitBody,domItems:document.querySelectorAll('.fit-item').length,tray:document.querySelectorAll('.tray-item').length,sel:fitSel};},
       layer:layer,
+      renderAvatar:renderAvatar,
+      openAvatar:openAvatarCreator,
       snapshot:function(){return {view:view,garments:closetGarments.length,looks:closetLooks.length,blocks:state.blocks.length};},
       clear:async function(){var i;for(i=0;i<closetGarments.length;i++)await idbDel("garments",closetGarments[i].id);for(i=0;i<closetLooks.length;i++)await idbDel("looks",closetLooks[i].id);closetGarments=[];closetLooks=[];renderCloset();}
     };
